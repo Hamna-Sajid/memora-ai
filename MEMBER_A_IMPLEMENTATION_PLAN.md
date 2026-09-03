@@ -28,6 +28,7 @@ The implementation must support the PRD's primary demo path: enroll an object wi
 - WP-4 completed on 2 September 2026. The safe route passes automated coverage and the local Ollama adapter described all six supplied images through `qwen3-vl:2b-instruct` on the RX 580. Alibaba remains an optional deployment provider and currently lacks Singapore Qwen-VL entitlement.
 - WP-5 passed on 3 September 2026 using the internal `/ai-test` surface and an Infinix Hot 30 running Chrome. Warm phone inference is approximately 5.6 seconds; the page remained responsive and samples stayed at 17 ms or lower, so no Web Worker is currently justified. The speed remains a WP-8 optimization risk against the preferred 2-3 second target.
 - WP-6 code integration completed on 3 September 2026 after Member B's `cb1127d` landed on `main`. The production adapter maps and validates the RPC result and is connected through `recallFromDatabase()` with mocked contract coverage. Live verification remains gated by Supabase credentials, deployed schema, and storage buckets.
+- WP-8 code integration completed on 3 September 2026 from Member C's `fd12e68`. The caregiver and patient screens retain the tested local embedding/recall implementations, pre-warm the model, prevent repeated recall taps, play audio only for confident results, and fail safely to the caregiver/Qwen path. Its real-device exit gate remains blocked by WP-7 calibration and live Supabase configuration.
 
 ### External gates
 
@@ -437,8 +438,8 @@ Do not commit directly to `main`. Rebase or merge the latest integration branch 
 
 ## 10. Immediate Next Actions
 
-1. Member A revokes the exposed API key and creates a fresh one.
-2. Preserve an explicit processing state for the measured 5-6 second phone inference path.
-3. Member A sends Member B the score-semantics contract in Section 4.
-4. Integrate Member B's matcher when their branch arrives, then calibrate the threshold.
-5. Integrate Member C's screens and run three end-to-end phone rehearsals.
+1. Add the Supabase URL and anon key locally, apply `supabase/schema.sql`, and confirm the `photos` and `audio` buckets.
+2. Enroll the WP-7 seed set and calibrate the threshold using known, unknown, and visually similar objects.
+3. Replace the placeholder caregiver phone number before a real demo.
+4. Run three end-to-end phone rehearsals and record a backup video.
+5. Revoke the Alibaba key disclosed in chat after the agreed local work is complete.

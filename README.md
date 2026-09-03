@@ -38,3 +38,7 @@
    `lib/supabase/queries.ts` exports a typed `matchItem()` adapter for `recall()`. It validates a 512-value finite embedding, calls Member B's `match_item` RPC, maps snake-case database fields into the `RecallItem` contract, and rejects malformed rows so recall fails closed. Patient UI should call `recallFromDatabase()` from `lib/ai/database-recall.ts`; the lower-level injected `recall()` remains available for isolated tests.
 
    Live verification requires `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`, the applied `supabase/schema.sql`, and existing public `photos` and `audio` buckets. The current schema/storage policies are suitable only for the team demo and require an authentication/RLS review before production use.
+
+   ## Demo screens
+
+   Member C's caregiver and patient screens are integrated at `/caregiver` and `/patient`. Both use the local browser model; the patient screen calls `recallFromDatabase()`, plays caregiver audio only for a confident typed result, and otherwise shows the safe not-sure/caregiver path with an optional `/api/describe` fallback. Missing Supabase settings no longer prevent the site from building or opening, but live enrollment and recognition still require the configuration listed above.

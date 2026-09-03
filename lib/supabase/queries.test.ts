@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  requireConfiguration: vi.fn(),
   rpc: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/client", () => ({
+  requireSupabaseConfiguration: mocks.requireConfiguration,
   supabase: {
     rpc: mocks.rpc,
   },
@@ -26,6 +28,7 @@ const databaseRow = {
 };
 
 beforeEach(() => {
+  mocks.requireConfiguration.mockReset();
   mocks.rpc.mockReset();
 });
 
@@ -60,6 +63,17 @@ describe("matchItem", () => {
     mocks.rpc.mockResolvedValue({ data: null, error: databaseError });
 
     await expect(matchItem(embedding)).rejects.toBe(databaseError);
+  });
+
+  it("reports missing Supabase configuration through the matcher", async () => {
+    mocks.requireConfiguration.mockImplementationOnce(() => {
+      throw new Error("Supabase is not configured.");
+    });
+
+    await expect(matchItem(embedding)).rejects.toThrow(
+      "Supabase is not configured.",
+    );
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it.each([

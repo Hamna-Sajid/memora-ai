@@ -6,7 +6,10 @@ import type {
   MatchResult,
   RecallItem,
 } from "@/lib/ai/types";
-import { supabase } from "@/lib/supabase/client";
+import {
+  requireSupabaseConfiguration,
+  supabase,
+} from "@/lib/supabase/client";
 
 type StorageBucket = "photos" | "audio";
 
@@ -97,6 +100,7 @@ export async function uploadFile(
   if (!name.trim()) {
     throw new TypeError("Upload name cannot be empty.");
   }
+  requireSupabaseConfiguration();
 
   const storage = supabase.storage.from(bucket);
   const { error } = await storage.upload(name, file, { upsert: false });
@@ -112,6 +116,7 @@ export async function saveItem(input: SaveItemInput) {
     throw new TypeError("Every enrollment embedding requires one photo URL.");
   }
   input.vectors.forEach(requireEmbedding);
+  requireSupabaseConfiguration();
 
   const { data: item, error } = await supabase
     .from("items")
@@ -142,6 +147,7 @@ export async function saveItem(input: SaveItemInput) {
 
 export const matchItem: MatchItem = async (embedding) => {
   requireEmbedding(embedding);
+  requireSupabaseConfiguration();
 
   const { data, error } = await supabase.rpc("match_item", {
     query_embedding: Array.from(embedding),
@@ -156,6 +162,7 @@ export const matchItem: MatchItem = async (embedding) => {
 };
 
 export async function saveConsent(caregiverName: string) {
+  requireSupabaseConfiguration();
   const { error } = await supabase
     .from("consent")
     .insert({ caregiver_name: caregiverName, voice_consent: true });

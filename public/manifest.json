@@ -1,0 +1,8 @@
+{
+  "name": "Memora Ai",
+  "short_name": "Memora",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f7f2",
+  "theme_color": "#1f6b57"
+}
