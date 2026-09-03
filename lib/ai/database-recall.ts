@@ -10,7 +10,8 @@ import { matchItem } from "@/lib/supabase/queries";
 
 export function recallFromDatabase(
   photo: EmbeddingImageInput,
+  patientId: string,
   options?: RecallOptions,
 ): Promise<RecallResult> {
-  return recall(photo, matchItem, options);
+  return recall(photo, (embedding) => matchItem(embedding, patientId), options);
 }

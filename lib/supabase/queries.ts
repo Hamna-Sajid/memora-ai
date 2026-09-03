@@ -2,7 +2,6 @@ import { EMBEDDING_SIZE } from "@/lib/ai/types";
 import type {
   ItemLanguage,
   ItemType,
-  MatchItem,
   MatchResult,
   RecallItem,
 } from "@/lib/ai/types";
@@ -14,6 +13,7 @@ import {
 type StorageBucket = "photos" | "audio";
 
 type SaveItemInput = {
+  patient_id: string;
   label: string;
   type: ItemType;
   note_raw: string;
@@ -23,6 +23,9 @@ type SaveItemInput = {
   vectors: readonly (readonly number[])[];
   photo_urls: readonly string[];
 };
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type DatabaseMatchRow = {
   id?: unknown;
@@ -56,7 +59,31 @@ function requireNonEmptyText(value: unknown, field: string): string {
   return value;
 }
 
-function mapMatchRow(row: DatabaseMatchRow): MatchResult {
+function requireUuid(value: string, field: string) {
+  if (!UUID_PATTERN.test(value)) {
+    throw new TypeError(`${field} must be a valid UUID.`);
+  }
+}
+
+async function signedMediaUrl(
+  bucket: StorageBucket,
+  storedValue: string,
+): Promise<string> {
+  let objectPath = storedValue;
+  if (/^https?:\/\//i.test(storedValue)) {
+    const marker = `/storage/v1/object/public/${bucket}/`;
+    const markerIndex = storedValue.indexOf(marker);
+    if (markerIndex < 0) return storedValue;
+    objectPath = decodeURIComponent(storedValue.slice(markerIndex + marker.length));
+  }
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .createSignedUrl(objectPath, 60 * 60);
+  if (error) throw error;
+  return data.signedUrl;
+}
+
+async function mapMatchRow(row: DatabaseMatchRow): Promise<MatchResult> {
   const type = row.type;
   if (type !== "object" && type !== "face" && type !== "med") {
     throw new TypeError("Database match has an invalid type.");
@@ -77,11 +104,12 @@ function mapMatchRow(row: DatabaseMatchRow): MatchResult {
     throw new TypeError("Database match has an invalid similarity score.");
   }
 
+  const storedAudio = requireNonEmptyText(row.audio_url, "audio_url");
   const item: RecallItem = {
     id: requireNonEmptyText(row.id, "id"),
     label: requireNonEmptyText(row.label, "label"),
     noteText: requireNonEmptyText(row.note_text, "note_text"),
-    audioUrl: requireNonEmptyText(row.audio_url, "audio_url"),
+    audioUrl: await signedMediaUrl("audio", storedAudio),
     type,
     language,
   };
@@ -93,6 +121,7 @@ export async function uploadFile(
   bucket: StorageBucket,
   file: Blob,
   name: string,
+  patientId: string,
 ) {
   if (file.size === 0) {
     throw new TypeError("Cannot upload an empty file.");
@@ -100,15 +129,18 @@ export async function uploadFile(
   if (!name.trim()) {
     throw new TypeError("Upload name cannot be empty.");
   }
+  requireUuid(patientId, "Patient id");
   requireSupabaseConfiguration();
 
   const storage = supabase.storage.from(bucket);
-  const { error } = await storage.upload(name, file, { upsert: false });
+  const objectPath = `${patientId}/${name}`;
+  const { error } = await storage.upload(objectPath, file, { upsert: false });
   if (error) throw error;
-  return storage.getPublicUrl(name).data.publicUrl;
+  return objectPath;
 }
 
 export async function saveItem(input: SaveItemInput) {
+  requireUuid(input.patient_id, "Patient id");
   if (input.vectors.length === 0) {
     throw new TypeError("At least one enrollment embedding is required.");
   }
@@ -121,6 +153,7 @@ export async function saveItem(input: SaveItemInput) {
   const { data: item, error } = await supabase
     .from("items")
     .insert({
+      patient_id: input.patient_id,
       label: input.label,
       type: input.type,
       note_raw: input.note_raw,
@@ -145,12 +178,17 @@ export async function saveItem(input: SaveItemInput) {
   return item.id as string;
 }
 
-export const matchItem: MatchItem = async (embedding) => {
+export async function matchItem(
+  embedding: readonly number[],
+  patientId: string,
+): Promise<MatchResult | null> {
   requireEmbedding(embedding);
+  requireUuid(patientId, "Patient id");
   requireSupabaseConfiguration();
 
   const { data, error } = await supabase.rpc("match_item", {
     query_embedding: Array.from(embedding),
+    target_patient_id: patientId,
   });
   if (error) throw error;
 
@@ -159,12 +197,42 @@ export const matchItem: MatchItem = async (embedding) => {
   }
 
   return mapMatchRow(data[0] as DatabaseMatchRow);
-};
+}
 
-export async function saveConsent(caregiverName: string) {
+export async function saveConsent(
+  caregiverName: string,
+  patientId: string,
+  caregiverId: string,
+) {
+  requireUuid(patientId, "Patient id");
+  requireUuid(caregiverId, "Caregiver id");
   requireSupabaseConfiguration();
   const { error } = await supabase
     .from("consent")
-    .insert({ caregiver_name: caregiverName, voice_consent: true });
+    .insert({
+      caregiver_name: caregiverName,
+      caregiver_id: caregiverId,
+      patient_id: patientId,
+      voice_consent: true,
+    });
   if (error) throw error;
+}
+
+export async function hasVoiceConsent(
+  patientId: string,
+  caregiverId: string,
+) {
+  requireUuid(patientId, "Patient id");
+  requireUuid(caregiverId, "Caregiver id");
+  requireSupabaseConfiguration();
+  const { data, error } = await supabase
+    .from("consent")
+    .select("id")
+    .eq("patient_id", patientId)
+    .eq("caregiver_id", caregiverId)
+    .eq("voice_consent", true)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return Boolean(data);
 }

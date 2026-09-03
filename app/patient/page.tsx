@@ -13,6 +13,13 @@ import { warmEmbeddingModel } from "@/lib/ai/embeddings";
 import type { RecallItem } from "@/lib/ai/types";
 import { capturePhoto, startCamera } from "@/lib/camera";
 import { caregiverPhoneHref } from "@/lib/caregiver-contact";
+import { getActivePatientId } from "@/lib/patient-context";
+import { currentUser } from "@/lib/supabase/auth";
+import {
+  getAccessiblePatient,
+  getPairedPatient,
+  type Patient,
+} from "@/lib/supabase/patients";
 
 type DescriptionResponse = {
   description?: unknown;
@@ -49,7 +56,10 @@ export default function PatientPage() {
     process.env.NEXT_PUBLIC_CAREGIVER_PHONE,
   );
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [status, setStatus] = useState("Loading recognition model…");
+  const [status, setStatus] = useState("Checking patient access…");
+  const [patient, setPatient] = useState<Patient | null>(null);
+  const [accessReady, setAccessReady] = useState(false);
+  const [caregiverPreview, setCaregiverPreview] = useState(false);
   const [result, setResult] = useState<RecallItem | null>(null);
   const [notSure, setNotSure] = useState(false);
   const [description, setDescription] = useState<string | null>(null);
@@ -57,6 +67,45 @@ export default function PatientPage() {
   const [cameraReady, setCameraReady] = useState(false);
 
   useEffect(() => {
+    let active = true;
+    void (async () => {
+      const user = await currentUser();
+      if (!active) return;
+      if (!user) {
+        setStatus("This device is not paired with a patient.");
+        setAccessReady(true);
+        return;
+      }
+
+      const accessiblePatient = user.is_anonymous
+        ? await getPairedPatient(user)
+        : await (async () => {
+            const patientId = getActivePatientId();
+            return patientId ? getAccessiblePatient(patientId) : null;
+          })();
+      if (!active) return;
+      setCaregiverPreview(!user.is_anonymous);
+      setPatient(accessiblePatient);
+      setAccessReady(true);
+      if (!accessiblePatient) {
+        setStatus(
+          user.is_anonymous
+            ? "This patient-device pairing is missing or revoked."
+            : "Select a patient from caregiver mode first.",
+        );
+      }
+    })().catch((error: unknown) => {
+      if (!active) return;
+      setStatus(error instanceof Error ? error.message : "Patient access could not be checked.");
+      setAccessReady(true);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!patient) return;
     let active = true;
     let stream: MediaStream | null = null;
 
@@ -94,12 +143,13 @@ export default function PatientPage() {
       active = false;
       stream?.getTracks().forEach((track) => track.stop());
     };
-  }, []);
+  }, [patient]);
 
   async function recognisePhoto(
     photo: Blob,
     captureConfirmation?: () => Promise<Blob>,
   ) {
+    if (!patient) return;
     setBusy(true);
     setResult(null);
     setNotSure(false);
@@ -107,7 +157,7 @@ export default function PatientPage() {
     setStatus("Looking…");
 
     try {
-      const recalled = await recallFromDatabase(photo);
+      const recalled = await recallFromDatabase(photo, patient.id);
 
       if (recalled.notSure) {
         setNotSure(true);
@@ -123,7 +173,7 @@ export default function PatientPage() {
 
         setStatus("Hold steady — checking once more…");
         const confirmationPhoto = await captureConfirmation();
-        const confirmation = await recallFromDatabase(confirmationPhoto);
+        const confirmation = await recallFromDatabase(confirmationPhoto, patient.id);
 
         if (!isConfirmedBy(recalled, confirmation)) {
           setNotSure(true);
@@ -180,12 +230,32 @@ export default function PatientPage() {
     await recognisePhoto(file);
   }
 
+  if (!accessReady) {
+    return <main className="app"><p className="status">{status}</p></main>;
+  }
+
+  if (!patient) {
+    return (
+      <main className="app">
+        <div className="card" style={{ maxWidth: 560, margin: "40px auto" }}>
+          <h2>Patient device not ready</h2>
+          <p className="alert">{status}</p>
+          {caregiverPreview ? (
+            <Link className="btn primary" href="/caregiver">Select patient</Link>
+          ) : (
+            <p className="muted">Ask a caregiver to create a pairing link and open it on this device.</p>
+          )}
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="app">
       <div className="phone">
         <div className="row" style={{ justifyContent: "space-between" }}>
-          <strong>Memora</strong>
-          <Link className="btn" href="/caregiver">Setup</Link>
+          <strong>Memora · {patient.displayName}</strong>
+          {caregiverPreview && <Link className="btn" href="/caregiver">Setup</Link>}
         </div>
 
         <div className="camera"><video ref={videoRef} playsInline muted /></div>

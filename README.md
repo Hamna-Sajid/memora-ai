@@ -42,7 +42,7 @@
    npm run dev
    ```
 
-   Fill `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local` before using enrollment or recognition. Share those values privately; never add a Supabase service-role key to the browser app or Git. `NEXT_PUBLIC_CAREGIVER_PHONE` is needed for the call button.
+   Fill `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in `.env.local` before using enrollment or recognition. Existing projects may temporarily use the legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` name. Never add a Supabase secret or service-role key to the browser app or Git. `NEXT_PUBLIC_CAREGIVER_PHONE` is needed for the call button.
 
    The default Ollama description fallback additionally requires a local Ollama installation with `qwen3-vl:2b-instruct`; it is optional for stored-item recognition. A teammate using the same Supabase project will see the same enrolled items and does not need to recreate the schema or buckets. For phone testing, use `npm run dev:https` and follow `docs/mobile-https-test.md` on that computer.
 

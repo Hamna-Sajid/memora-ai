@@ -1,16 +1,19 @@
 import { createClient } from "@supabase/supabase-js";
 
 const configuredUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-const configuredAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+const configuredPublishableKey = (
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+)?.trim();
 
 export const isSupabaseConfigured = Boolean(
-  configuredUrl && configuredAnonKey,
+  configuredUrl && configuredPublishableKey,
 );
 
 export function requireSupabaseConfiguration() {
   if (!isSupabaseConfigured) {
     throw new Error(
-      "Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY, then restart the app.",
+      "Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, then restart the app.",
     );
   }
 }
@@ -19,5 +22,5 @@ export function requireSupabaseConfiguration() {
 // calls requireSupabaseConfiguration() before network or storage access.
 export const supabase = createClient(
   configuredUrl || "http://127.0.0.1:54321",
-  configuredAnonKey || "missing-anon-key",
+  configuredPublishableKey || "missing-publishable-key",
 );

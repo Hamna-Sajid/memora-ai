@@ -5,7 +5,13 @@ import type { ChangeEvent } from "react";
 
 import { uploadFile } from "@/lib/supabase/queries";
 
-export default function VoiceRecorder({ onSaved }: { onSaved: (url: string) => void }) {
+export default function VoiceRecorder({
+  patientId,
+  onSaved,
+}: {
+  patientId: string;
+  onSaved: (url: string) => void;
+}) {
   const [recording, setRecording] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -27,6 +33,7 @@ export default function VoiceRecorder({ onSaved }: { onSaved: (url: string) => v
       "audio",
       blob,
       `note-${Date.now()}${extension}`,
+      patientId,
     );
     onSaved(url);
   }

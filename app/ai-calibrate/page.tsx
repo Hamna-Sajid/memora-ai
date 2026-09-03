@@ -12,6 +12,7 @@ import { embedImage, warmEmbeddingModel } from "@/lib/ai/embeddings";
 import { PROVISIONAL_CONFIDENCE_THRESHOLD } from "@/lib/ai/recall";
 import { confidenceThresholdForType } from "@/lib/ai/thresholds";
 import { matchItem } from "@/lib/supabase/queries";
+import { getActivePatientId } from "@/lib/patient-context";
 
 type CalibrationRow = {
   filename: string;
@@ -35,9 +36,25 @@ export default function CalibrationPage() {
   const [unknown, setUnknown] = useState(false);
   const [rows, setRows] = useState<CalibrationRow[]>([]);
   const [busy, setBusy] = useState(false);
+  const [patientId, setPatientId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
+    const activePatientId = getActivePatientId();
+    if (!activePatientId) {
+      void Promise.resolve().then(() => {
+        if (active) {
+          setPatientId(null);
+          setStatus("Select a patient in caregiver mode before calibrating.");
+        }
+      });
+      return () => {
+        active = false;
+      };
+    }
+    void Promise.resolve().then(() => {
+      if (active) setPatientId(activePatientId);
+    });
     void warmEmbeddingModel()
       .then(() => {
         if (active) setStatus("Ready for calibration photos.");
@@ -54,6 +71,10 @@ export default function CalibrationPage() {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
     if (files.length === 0 || busy) return;
+    if (!patientId) {
+      setStatus("Select a patient in caregiver mode before calibrating.");
+      return;
+    }
     if (!unknown && !expectedLabel.trim()) {
       setStatus("Enter the enrolled label for known-item photos.");
       return;
@@ -66,7 +87,7 @@ export default function CalibrationPage() {
     for (const file of files) {
       try {
         const embedding = await embedImage(file);
-        const match = await matchItem(embedding);
+        const match = await matchItem(embedding, patientId);
         const decision = analyzeCalibrationMatch(
           unknown ? null : expectedLabel,
           match,
