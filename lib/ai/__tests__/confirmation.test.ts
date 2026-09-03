@@ -29,19 +29,26 @@ const rejected: RecallResult = {
 };
 
 describe("borderline recognition confirmation", () => {
-  it("requires another look for a borderline Snakers result", () => {
+  it("requires another look for a borderline object result", () => {
     expect(requiresConfirmation(recognised(0.77))).toBe(true);
-    expect(requiresConfirmation(recognised(0.7999))).toBe(true);
+    expect(
+      requiresConfirmation(recognised(0.7999, { ...snakers, label: "Wavy" })),
+    ).toBe(true);
   });
 
-  it("accepts a strong Snakers result without another look", () => {
+  it("accepts a strong object result without another look", () => {
     expect(requiresConfirmation(recognised(0.8))).toBe(false);
   });
 
-  it("does not apply the Snakers confirmation band to other items", () => {
+  it("does not apply the object confirmation band to other item types", () => {
     expect(
       requiresConfirmation(
-        recognised(0.75, { ...snakers, id: "suduri-id", label: "Suduri" }),
+        recognised(0.75, {
+          ...snakers,
+          id: "suduri-id",
+          label: "Suduri",
+          type: "med",
+        }),
       ),
     ).toBe(false);
     expect(requiresConfirmation(rejected)).toBe(false);

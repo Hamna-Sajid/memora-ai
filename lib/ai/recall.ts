@@ -9,7 +9,7 @@ import type {
   RecallResult,
 } from "@/lib/ai/types";
 import {
-  confidenceThresholdForLabel,
+  confidenceThresholdForType,
   DEFAULT_CONFIDENCE_THRESHOLD,
 } from "@/lib/ai/thresholds";
 
@@ -121,7 +121,7 @@ export async function recall(
   }
 
   const threshold =
-    options.threshold ?? confidenceThresholdForLabel(match.item.label);
+    options.threshold ?? confidenceThresholdForType(match.item.type);
 
   if (match.score < threshold) {
     return {

@@ -17,7 +17,7 @@
 
    The model is loaded once per browser session. A failed initial download clears the cached promise so a later warm-up can retry.
 
-   `lib/ai/recall.ts` exports `recall(photo, matchItem, options?)`. The default working confidence threshold is `0.70`, selected from the first exact-search calibration batch. Calibrated item overrides are isolated in `lib/ai/thresholds.ts`; `Snakers` currently uses `0.77` and live camera scores below `0.80` require a confirming second frame. These values remain provisional. The matcher is injected so isolated tests can use a fake implementation.
+   `lib/ai/recall.ts` exports `recall(photo, matchItem, options?)`. The default working confidence threshold is `0.70`, selected from the first exact-search calibration batch. Calibrated type policies are isolated in `lib/ai/thresholds.ts`; objects currently use `0.77` and live camera object scores below `0.80` require a confirming second frame. Medicines and faces retain the `0.70` default until separately calibrated. These values remain provisional. The matcher is injected so isolated tests can use a fake implementation.
 
    A confident result has `{ notSure: false, item, score }`. Every failure or low-confidence path returns `{ notSure: true, score, reason }` and never exposes an item. Member B's adapter must return cosine similarity in the range `0..1`, where higher is better, and map database fields to the camel-case `RecallItem` contract in `lib/ai/types.ts`.
 

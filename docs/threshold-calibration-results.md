@@ -23,8 +23,12 @@ This is not a final threshold. Repeat with several enrolled objects, visually si
 
 Eight held-out Snakers photos scored from `0.7782` to `0.8998`. Eight unknown photos, including visually similar chip packets, had a highest Snakers score of `0.7636`.
 
-Known minimum: `0.7782`. Unknown maximum: `0.7636`. Observed gap: `0.0146`. A provisional item-specific cutoff of `0.77` is used for `Snakers`; other items retain the `0.70` default.
+Known minimum: `0.7782`. Unknown maximum: `0.7636`. Observed gap: `0.0146`. A provisional cutoff of `0.77` is used for objects; medicines and faces retain the `0.70` default until separately calibrated.
 
 The margin is narrow, so this cutoff is appropriate for the current demo only. Recalibrate with additional products and live camera images before production use.
 
-Patient-mode camera results from `0.77` up to (but not including) `0.80` require a second live frame. The item is returned only when the second frame also passes its cutoff and identifies the same item. This confirmation band addresses observed borderline false positives that disappeared on an immediate retake.
+Patient-mode object camera results from `0.77` up to (but not including) `0.80` require a second live frame. The item is returned only when the second frame also passes its cutoff and identifies the same item. This confirmation band addresses observed borderline false positives that disappeared on an immediate retake.
+
+Calibration labels are global: a photo of any enrolled item must use that item's label as the expected result. The Unknown setting is reserved for objects that have not been enrolled anywhere. Cross-item photos incorrectly marked Unknown produce misleading unsafe-match rows even when the model identifies the enrolled item correctly.
+
+Live phone validation passed on 4 September 2026 after applying the object-type policy. Enrolled objects remained recognisable, genuinely unenrolled objects followed the not-sure path, and borderline object results used the second-frame confirmation flow successfully.

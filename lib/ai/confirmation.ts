@@ -1,10 +1,10 @@
-import { confirmationCeilingForLabel } from "@/lib/ai/thresholds";
+import { confirmationCeilingForType } from "@/lib/ai/thresholds";
 import type { RecallResult } from "@/lib/ai/types";
 
 export function requiresConfirmation(result: RecallResult): boolean {
   if (result.notSure) return false;
 
-  const ceiling = confirmationCeilingForLabel(result.item.label);
+  const ceiling = confirmationCeilingForType(result.item.type);
   return ceiling !== null && result.score < ceiling;
 }
 

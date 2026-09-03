@@ -1,25 +1,25 @@
+import type { ItemType } from "@/lib/ai/types";
+
 export const DEFAULT_CONFIDENCE_THRESHOLD = 0.7;
 
-// Provisional cutoffs measured with held-out photos. These overrides are
-// intentionally isolated here until calibration values are stored per item.
-const CALIBRATED_POLICIES = new Map<
-  string,
-  { confidenceThreshold: number; confirmationCeiling?: number }
->([
-  ["snakers", { confidenceThreshold: 0.77, confirmationCeiling: 0.8 }],
-]);
+type RecognitionPolicy = {
+  confidenceThreshold: number;
+  confirmationCeiling?: number;
+};
 
-export function confidenceThresholdForLabel(label: string): number {
+// Provisional type-level policies measured with held-out photos. Keep them
+// isolated here until exceptional values need to be stored per database item.
+const CALIBRATED_POLICIES: Partial<Record<ItemType, RecognitionPolicy>> = {
+  object: { confidenceThreshold: 0.77, confirmationCeiling: 0.8 },
+};
+
+export function confidenceThresholdForType(type: ItemType): number {
   return (
-    CALIBRATED_POLICIES.get(label.trim().toLowerCase())
-      ?.confidenceThreshold ??
+    CALIBRATED_POLICIES[type]?.confidenceThreshold ??
     DEFAULT_CONFIDENCE_THRESHOLD
   );
 }
 
-export function confirmationCeilingForLabel(label: string): number | null {
-  return (
-    CALIBRATED_POLICIES.get(label.trim().toLowerCase())
-      ?.confirmationCeiling ?? null
-  );
+export function confirmationCeilingForType(type: ItemType): number | null {
+  return CALIBRATED_POLICIES[type]?.confirmationCeiling ?? null;
 }

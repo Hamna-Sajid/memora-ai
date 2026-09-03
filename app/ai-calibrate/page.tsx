@@ -10,7 +10,7 @@ import {
 } from "@/lib/ai/calibration";
 import { embedImage, warmEmbeddingModel } from "@/lib/ai/embeddings";
 import { PROVISIONAL_CONFIDENCE_THRESHOLD } from "@/lib/ai/recall";
-import { confidenceThresholdForLabel } from "@/lib/ai/thresholds";
+import { confidenceThresholdForType } from "@/lib/ai/thresholds";
 import { matchItem } from "@/lib/supabase/queries";
 
 type CalibrationRow = {
@@ -71,7 +71,7 @@ export default function CalibrationPage() {
           unknown ? null : expectedLabel,
           match,
           match
-            ? confidenceThresholdForLabel(match.item.label)
+            ? confidenceThresholdForType(match.item.type)
             : PROVISIONAL_CONFIDENCE_THRESHOLD,
         );
         nextRows.push({
@@ -108,7 +108,7 @@ export default function CalibrationPage() {
         <section className="card">
           <h2>Recognition score calibration</h2>
           <p className="muted">
-            Internal test screen. Use held-out photos that were not enrolled. The default provisional threshold is {PROVISIONAL_CONFIDENCE_THRESHOLD.toFixed(2)}; calibrated item overrides are applied automatically.
+            Internal test screen. Use held-out photos that were not enrolled. The default provisional threshold is {PROVISIONAL_CONFIDENCE_THRESHOLD.toFixed(2)}; calibrated type policies are applied automatically.
           </p>
           <div className="fields">
             <label>
@@ -127,8 +127,12 @@ export default function CalibrationPage() {
                 disabled={busy}
                 style={{ width: "auto", minHeight: "auto" }}
               />
-              These photos are unknown objects
+              These photos show objects not enrolled anywhere
             </label>
+            <small className="span">
+              Do not select this for a different enrolled item. Enter that
+              item&apos;s actual label and test it as a known item instead.
+            </small>
             <label className="span">
               Select one or more query photos
               <input

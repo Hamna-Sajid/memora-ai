@@ -76,9 +76,9 @@ describe("recall", () => {
     });
   });
 
-  it("applies a calibrated threshold for Snakers", async () => {
-    const snakers = { ...item, label: "Snakers", type: "object" as const };
-    const { embed, matchItem } = dependencies(match(0.765, snakers));
+  it("applies the calibrated threshold to every object", async () => {
+    const object = { ...item, label: "Wavy", type: "object" as const };
+    const { embed, matchItem } = dependencies(match(0.765, object));
 
     await expect(recall(photo, matchItem, { embed })).resolves.toEqual({
       notSure: true,
@@ -87,13 +87,13 @@ describe("recall", () => {
     });
   });
 
-  it("accepts Snakers at its calibrated threshold", async () => {
-    const snakers = { ...item, label: " snAKers ", type: "object" as const };
-    const { embed, matchItem } = dependencies(match(0.77, snakers));
+  it("accepts an object at its calibrated threshold", async () => {
+    const object = { ...item, label: "Stackit", type: "object" as const };
+    const { embed, matchItem } = dependencies(match(0.77, object));
 
     await expect(recall(photo, matchItem, { embed })).resolves.toEqual({
       notSure: false,
-      item: snakers,
+      item: object,
       score: 0.77,
     });
   });
