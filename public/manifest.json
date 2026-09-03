@@ -1,0 +1,11 @@
+{
+  "name": "Memora Ai",
+  "short_name": "Memora",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f7f2",
+  "theme_color": "#1f6b57",
+  "icons": [
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
