@@ -42,3 +42,5 @@
    ## Demo screens
 
    Member C's caregiver and patient screens are integrated at `/caregiver` and `/patient`. Both use the local browser model; the patient screen calls `recallFromDatabase()`, plays caregiver audio only for a confident typed result, and otherwise shows the safe not-sure/caregiver path with an optional `/api/describe` fallback. Missing Supabase settings no longer prevent the site from building or opening, but live enrollment and recognition still require the configuration listed above.
+
+   `/ai-calibrate` is an internal WP-7 tool for processing held-out known or unknown photos and recording the nearest label, raw similarity score, and decision at the provisional threshold. Filenames and results remain in browser memory and are not uploaded or persisted.

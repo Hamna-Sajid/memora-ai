@@ -29,6 +29,7 @@ The implementation must support the PRD's primary demo path: enroll an object wi
 - WP-5 passed on 3 September 2026 using the internal `/ai-test` surface and an Infinix Hot 30 running Chrome. Warm phone inference is approximately 5.6 seconds; the page remained responsive and samples stayed at 17 ms or lower, so no Web Worker is currently justified. The speed remains a WP-8 optimization risk against the preferred 2-3 second target.
 - WP-6 code integration completed on 3 September 2026 after Member B's `cb1127d` landed on `main`. The production adapter maps and validates the RPC result and is connected through `recallFromDatabase()` with mocked contract coverage. Live verification remains gated by Supabase credentials, deployed schema, and storage buckets.
 - WP-8 code integration completed on 3 September 2026 from Member C's `fd12e68`. The caregiver and patient screens retain the tested local embedding/recall implementations, pre-warm the model, prevent repeated recall taps, play audio only for confident results, and fail safely to the caregiver/Qwen path. Its real-device exit gate remains blocked by WP-7 calibration and live Supabase configuration.
+- The first live end-to-end rehearsal passed on 3 September 2026: `Suduri` was enrolled with five photos and public caregiver audio, a held-out view recalled it successfully, and one unrelated photo produced the safe not-sure response. This is integration evidence only, not enough data to finalize the WP-7 threshold.
 
 ### External gates
 
