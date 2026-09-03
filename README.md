@@ -46,3 +46,5 @@
    `/ai-calibrate` is an internal WP-7 tool for processing held-out known or unknown photos and recording the nearest label, raw similarity score, and decision at the provisional threshold. Filenames and results remain in browser memory and are not uploaded or persisted.
 
    The demo schema deliberately uses exact pgvector search. Do not add the previous 100-list IVFFlat index to the small seed dataset: an approximate index created with too little data can return no candidate. Introduce and tune an approximate index only when the dataset is large enough to justify it.
+
+   For the final phone camera/microphone rehearsal, run `npm run dev:https` and follow `docs/mobile-https-test.md`. Configure the call action with a valid international E.164 number in the local-only `NEXT_PUBLIC_CAREGIVER_PHONE` variable; when it is absent or invalid, the UI does not render a fake call link.

@@ -31,6 +31,7 @@ The implementation must support the PRD's primary demo path: enroll an object wi
 - WP-8 code integration completed on 3 September 2026 from Member C's `fd12e68`. The caregiver and patient screens retain the tested local embedding/recall implementations, pre-warm the model, prevent repeated recall taps, play audio only for confident results, and fail safely to the caregiver/Qwen path. Its real-device exit gate remains blocked by WP-7 calibration and live Supabase configuration.
 - The first live end-to-end rehearsal passed on 3 September 2026: `Suduri` was enrolled with five photos and public caregiver audio, a held-out view recalled it successfully, and one unrelated photo produced the safe not-sure response. This is integration evidence only, not enough data to finalize the WP-7 threshold.
 - Initial WP-7 batch exposed a 100-list IVFFlat index built with only five vectors, causing intermittent empty matches. After removing that index, all eight queries returned a nearest row: known scores were 0.7450–0.7809 and unknown scores were 0.5635–0.6309. The working threshold is now `0.70`; it accepts all four measured known views and rejects all four measured unknowns, but remains provisional until multiple enrolled objects are tested.
+- WP-8 hardening now includes a repeatable LAN HTTPS command and a validated, optional caregiver phone configuration. The remaining WP-8 gate is operational: install the generated development CA on the Infinix Hot 30, run three complete camera/microphone rehearsals, and record the backup demo.
 
 ### External gates
 

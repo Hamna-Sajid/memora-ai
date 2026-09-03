@@ -8,6 +8,7 @@ import { recallFromDatabase } from "@/lib/ai/database-recall";
 import { warmEmbeddingModel } from "@/lib/ai/embeddings";
 import type { RecallItem } from "@/lib/ai/types";
 import { capturePhoto, startCamera } from "@/lib/camera";
+import { caregiverPhoneHref } from "@/lib/caregiver-contact";
 
 type DescriptionResponse = {
   description?: unknown;
@@ -40,6 +41,9 @@ async function describeUnknownPhoto(photo: Blob): Promise<string | null> {
 }
 
 export default function PatientPage() {
+  const caregiverPhone = caregiverPhoneHref(
+    process.env.NEXT_PUBLIC_CAREGIVER_PHONE,
+  );
   const videoRef = useRef<HTMLVideoElement>(null);
   const [status, setStatus] = useState("Loading recognition model…");
   const [result, setResult] = useState<RecallItem | null>(null);
@@ -179,7 +183,11 @@ export default function PatientPage() {
               <strong>I&apos;m not sure.</strong>
               {description && <p>{description}</p>}
               <p>Shall I call your caregiver?</p>
-              <a className="btn primary" href="tel:+920000000000">Call caregiver</a>
+              {caregiverPhone ? (
+                <a className="btn primary" href={caregiverPhone}>Call caregiver</a>
+              ) : (
+                <p className="muted">Caregiver phone number is not configured.</p>
+              )}
             </>
           )}
           {result && (
