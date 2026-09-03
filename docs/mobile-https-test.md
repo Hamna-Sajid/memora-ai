@@ -30,3 +30,17 @@ Run three complete caregiver-to-patient rehearsals on the intended phone:
 4. Record model warm-up, recall time, and any camera/audio failure.
 
 After one clean rehearsal, record a backup demo video. Remove the development CA and any test-only sensitive data when testing is finished.
+
+## Recorded rehearsals
+
+### Rehearsal 1 — 4 September 2026
+
+- Device: Infinix Hot 30, Chrome, trusted LAN HTTPS.
+- Camera access: passed.
+- Held-out `Suduri` recognition: passed.
+- Correct caregiver audio playback: passed.
+- Unknown-object safe not-sure response: passed.
+- Configured caregiver call action: passed.
+- Responsiveness: reported comparable to the earlier phone test. Warm recognition remained approximately 5.6 seconds; no new precise timing sample was recorded for this rehearsal.
+
+Status: complete. Two independent rehearsals remain before the WP-8 exit gate is satisfied.

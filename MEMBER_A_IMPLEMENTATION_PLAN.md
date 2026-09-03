@@ -32,6 +32,7 @@ The implementation must support the PRD's primary demo path: enroll an object wi
 - The first live end-to-end rehearsal passed on 3 September 2026: `Suduri` was enrolled with five photos and public caregiver audio, a held-out view recalled it successfully, and one unrelated photo produced the safe not-sure response. This is integration evidence only, not enough data to finalize the WP-7 threshold.
 - Initial WP-7 batch exposed a 100-list IVFFlat index built with only five vectors, causing intermittent empty matches. After removing that index, all eight queries returned a nearest row: known scores were 0.7450–0.7809 and unknown scores were 0.5635–0.6309. The working threshold is now `0.70`; it accepts all four measured known views and rejects all four measured unknowns, but remains provisional until multiple enrolled objects are tested.
 - WP-8 hardening now includes a repeatable LAN HTTPS command and a validated, optional caregiver phone configuration. The remaining WP-8 gate is operational: install the generated development CA on the Infinix Hot 30, run three complete camera/microphone rehearsals, and record the backup demo.
+- WP-8 rehearsal 1 of 3 passed on 4 September 2026 using the Infinix Hot 30 over trusted LAN HTTPS. Camera access, held-out Suduri recognition, caregiver audio, unknown-object rejection, and the configured call action all worked. Timing was reported comparable to the prior approximately 5.6-second warm result; two rehearsals and the backup video remain.
 
 ### External gates
 
