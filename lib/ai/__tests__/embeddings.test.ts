@@ -3,7 +3,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   extractor: vi.fn(),
   pipeline: vi.fn(),
-  env: { allowLocalModels: true },
+  env: {
+    allowLocalModels: true,
+    allowRemoteModels: true,
+    localModelPath: "",
+    useBrowserCache: true,
+    useWasmCache: true,
+  },
 }));
 
 vi.mock("@huggingface/transformers", () => ({
@@ -26,12 +32,16 @@ beforeEach(() => {
   mocks.extractor.mockReset();
   mocks.pipeline.mockReset();
   mocks.env.allowLocalModels = true;
+  mocks.env.allowRemoteModels = true;
+  mocks.env.localModelPath = "";
+  mocks.env.useBrowserCache = true;
+  mocks.env.useWasmCache = true;
   mocks.extractor.mockResolvedValue(validTensor());
   mocks.pipeline.mockResolvedValue(mocks.extractor);
 });
 
 describe("warmEmbeddingModel", () => {
-  it("loads one remote CLIP extractor for repeated and concurrent calls", async () => {
+  it("loads one local CLIP extractor for repeated and concurrent calls", async () => {
     const { CLIP_MODEL_ID, warmEmbeddingModel } = await importEmbeddings();
 
     await Promise.all([
@@ -45,8 +55,13 @@ describe("warmEmbeddingModel", () => {
     expect(mocks.pipeline).toHaveBeenCalledWith(
       "image-feature-extraction",
       CLIP_MODEL_ID,
+      { device: "wasm", dtype: "q8" },
     );
-    expect(mocks.env.allowLocalModels).toBe(false);
+    expect(mocks.env.allowLocalModels).toBe(true);
+    expect(mocks.env.allowRemoteModels).toBe(false);
+    expect(mocks.env.localModelPath).toBe("/models/");
+    expect(mocks.env.useBrowserCache).toBe(false);
+    expect(mocks.env.useWasmCache).toBe(false);
   });
 
   it("clears a failed loader so a later warm-up can retry", async () => {

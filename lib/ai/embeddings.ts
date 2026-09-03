@@ -117,11 +117,16 @@ function normalizeEmbedding(data: ArrayLike<number>): number[] {
 
 async function createExtractor(): Promise<ImageFeatureExtractor> {
   const { env, pipeline } = await import("@huggingface/transformers");
-  env.allowLocalModels = false;
+  env.allowLocalModels = true;
+  env.allowRemoteModels = false;
+  env.localModelPath = "/models/";
+  env.useBrowserCache = false;
+  env.useWasmCache = false;
 
   const extractor = await pipeline(
     "image-feature-extraction",
     CLIP_MODEL_ID,
+    { device: "wasm", dtype: "q8" },
   );
 
   return extractor as unknown as ImageFeatureExtractor;

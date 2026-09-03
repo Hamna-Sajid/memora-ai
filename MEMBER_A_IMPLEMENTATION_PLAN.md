@@ -26,7 +26,7 @@ The implementation must support the PRD's primary demo path: enroll an object wi
 - WP-2 passed on 2 September 2026 with a browser-only singleton loader, typed validation, and automated coverage.
 - WP-3 passed on 2 September 2026 with an injected matcher, provisional threshold, fail-closed results, and boundary/error coverage.
 - WP-4 completed on 2 September 2026. The safe route passes automated coverage and the local Ollama adapter described all six supplied images through `qwen3-vl:2b-instruct` on the RX 580. Alibaba remains an optional deployment provider and currently lacks Singapore Qwen-VL entitlement.
-- WP-5's internal `/ai-test` surface and desktop-browser baseline completed on 3 September 2026. The real-phone measurement remains before its exit criterion can be closed.
+- WP-5 passed on 3 September 2026 using the internal `/ai-test` surface and an Infinix Hot 30 running Chrome. Warm phone inference is approximately 5.6 seconds; the page remained responsive and samples stayed at 17 ms or lower, so no Web Worker is currently justified. The speed remains a WP-8 optimization risk against the preferred 2-3 second target.
 
 ### External gates
 
@@ -324,11 +324,14 @@ Exit criteria:
 - The interface remains responsive or a Web Worker mitigation is implemented.
 
 Implementation status (3 September 2026): `/ai-test` is complete and verified
-in a production desktop browser build. The desktop baseline was 42,886 ms for a
-cold model warm-up, 497 ms for the first embedding, and 355 ms for a repeated
-embedding, with a normalized 512-value result. See
-`docs/browser-performance-test.md`. Run the checklist there on the intended demo
-phone before marking WP-5 complete or deciding whether a Web Worker is needed.
+in production desktop and Infinix Hot 30 Chrome tests. The desktop baseline was
+42,886 ms for a cold model warm-up, 497 ms for the first embedding, and 355 ms
+for a repeated embedding, with a normalized 512-value result. On the phone, the
+first run measured 63,419/6,190/5,714 ms for warm-up/first/warm inference; after
+reload it measured 22,896/6,000/5,552 ms. Worst sampled UI delay was 17 ms and 3
+ms respectively. See `docs/browser-performance-test.md`. A Web Worker is not
+currently justified by responsiveness, but the roughly 5.6-second warm time is
+an explicit WP-8 optimization risk.
 
 ### WP-6 - Member B integration
 
@@ -434,7 +437,7 @@ Do not commit directly to `main`. Rebase or merge the latest integration branch 
 ## 10. Immediate Next Actions
 
 1. Member A revokes the exposed API key and creates a fresh one.
-2. Run `/ai-test` on the intended demo phone and record the WP-5 measurements.
+2. Preserve an explicit processing state for the measured 5-6 second phone inference path.
 3. Member A sends Member B the score-semantics contract in Section 4.
 4. Integrate Member B's matcher when their branch arrives, then calibrate the threshold.
 5. Integrate Member C's screens and run three end-to-end phone rehearsals.

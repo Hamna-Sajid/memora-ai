@@ -4,6 +4,11 @@ Date: 3 September 2026
 
 ## Test surface
 
+Before building the app, run `npm run models:prepare`. The generated
+`public/models/` directory is intentionally ignored by Git because the vision
+model is approximately 89 MB. Browsers then fetch the Q8/WASM model from the Memora
+server instead of contacting Hugging Face directly.
+
 Open `/ai-test` on the device being evaluated. The page:
 
 - Starts `warmEmbeddingModel()` once and records the model warm-up time.
@@ -51,7 +56,18 @@ Record the result here before closing WP-5:
 
 | Device/browser | Cache state | Warm-up | First embedding | Warm embedding | Worst UI delay | Visible freeze |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| Pending | Pending | Pending | Pending | Pending | Pending | Pending |
+| Infinix Hot 30 / Chrome | First phone visit | 63,419 ms | 6,190 ms | 5,714 ms | 17 ms | No |
+| Infinix Hot 30 / Chrome | Reload, browser data retained | 22,896 ms | 6,000 ms | 5,552 ms | 3 ms | No |
+
+The reload reduced model warm-up by about 64%, while repeated inference stayed
+near 5.6 seconds. The frame-delay sample is low, so a Web Worker is not yet
+justified for responsiveness. Warm inference is slower than the preferred 2-3
+second demo target; keep an explicit processing state and reassess smaller-model
+or hardware-accelerated options during WP-8 if the complete flow feels too slow.
+
+WP-5 is accepted with this performance note: the real-phone interface remained
+responsive during both inference runs, so the package's responsiveness gate is
+complete without a Web Worker.
 
 If warm inference is impractical or interaction freezes, move model inference
 to a Web Worker while preserving the existing `warmEmbeddingModel()` and

@@ -29,6 +29,6 @@
 
    ## Browser performance test
 
-   Build and run the app, then open `http://localhost:3000/ai-test`. The internal page measures CLIP model warm-up, first and repeated image embeddings, a lightweight UI-delay signal, vector dimensions, and normalization. On a phone, the file input requests the rear camera when the browser supports `capture="environment"`.
+   Run `npm run models:prepare` before building, then build and run the app and open `http://localhost:3000/ai-test`. The preparation command copies the cached Q8/WASM CLIP files into ignored same-origin assets, avoiding a runtime dependency on direct Hugging Face access. The internal page measures CLIP model warm-up, first and repeated image embeddings, a lightweight UI-delay signal, vector dimensions, and normalization. On a phone, the file input requests the rear camera when the browser supports `capture="environment"`.
 
    The current desktop baseline and the real-phone recording checklist are in `docs/browser-performance-test.md`. WP-5 remains open until the intended demo phone is measured.

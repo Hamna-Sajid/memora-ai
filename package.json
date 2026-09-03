@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "models:prepare": "node scripts/prepare-local-model.mjs",
     "spike:recognition": "node scripts/recognition-spike.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
