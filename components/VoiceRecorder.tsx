@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { ChangeEvent } from "react";
 
 import { uploadFile } from "@/lib/supabase/queries";
 
@@ -18,6 +19,18 @@ export default function VoiceRecorder({ onSaved }: { onSaved: (url: string) => v
     };
   }, [previewUrl]);
 
+  async function uploadAudio(blob: Blob, extension = ".webm") {
+    if (blob.size === 0) throw new Error("No audio was provided.");
+    setPreviewUrl(URL.createObjectURL(blob));
+    setUploading(true);
+    const url = await uploadFile(
+      "audio",
+      blob,
+      `note-${Date.now()}${extension}`,
+    );
+    onSaved(url);
+  }
+
   async function start() {
     setError("");
     try {
@@ -30,13 +43,13 @@ export default function VoiceRecorder({ onSaved }: { onSaved: (url: string) => v
       mediaRecorder.onstop = async () => {
         try {
           const blob = new Blob(chunks.current, { type: "audio/webm" });
-          if (blob.size === 0) throw new Error("No audio was recorded.");
-          setPreviewUrl(URL.createObjectURL(blob));
-          setUploading(true);
-          const url = await uploadFile("audio", blob, `note-${Date.now()}.webm`);
-          onSaved(url);
-        } catch {
-          setError("The voice note could not be uploaded. Please try again.");
+          await uploadAudio(blob);
+        } catch (uploadError: unknown) {
+          setError(
+            uploadError instanceof Error
+              ? uploadError.message
+              : "The voice note could not be uploaded. Please try again.",
+          );
         } finally {
           setUploading(false);
           stream.getTracks().forEach((track) => track.stop());
@@ -55,6 +68,26 @@ export default function VoiceRecorder({ onSaved }: { onSaved: (url: string) => v
     setRecording(false);
   }
 
+  async function chooseAudio(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setError("");
+    const extension = /\.[a-z0-9]{1,5}$/i.exec(file.name)?.[0] || ".webm";
+    try {
+      await uploadAudio(file, extension);
+    } catch (uploadError: unknown) {
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "The audio file could not be uploaded. Please try again.",
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
     <div>
       {!recording ? (
@@ -64,6 +97,10 @@ export default function VoiceRecorder({ onSaved }: { onSaved: (url: string) => v
       )}
       {uploading && <span> uploading…</span>}
       {previewUrl && <audio src={previewUrl} controls />}
+      <label style={{ marginTop: 12 }}>
+        Or choose an existing audio file
+        <input type="file" accept="audio/*" onChange={chooseAudio} disabled={uploading} />
+      </label>
       {error && <p className="alert" role="alert">{error}</p>}
     </div>
   );

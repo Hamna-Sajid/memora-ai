@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import type { ChangeEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { startCamera, capturePhoto } from "@/lib/camera";
@@ -42,6 +43,7 @@ export default function CaregiverPage() {
   const [note, setNote] = useState("heart medicine, one at breakfast");
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
 
   useEffect(() => {
     if (!consented || !videoRef.current) return;
@@ -51,10 +53,14 @@ export default function CaregiverPage() {
     void startCamera(videoRef.current)
       .then((cameraStream) => {
         stream = cameraStream;
+        if (active) setCameraReady(true);
         if (!active) stream.getTracks().forEach((track) => track.stop());
       })
       .catch(() => {
-        if (active) setStatus("Camera blocked — allow camera access and reload.");
+        if (active) {
+          setCameraReady(false);
+          setStatus("No camera is available. Choose 3–5 image files below.");
+        }
       });
     void warmEmbeddingModel().catch(() => {
       if (active) setStatus("Recognition model unavailable — reload to retry.");
@@ -75,8 +81,25 @@ export default function CaregiverPage() {
 
   async function addPhoto() {
     if (!videoRef.current) return;
-    const blob = await capturePhoto(videoRef.current);
-    setPhotos((p) => [...p, blob].slice(0, 5));
+    try {
+      const blob = await capturePhoto(videoRef.current);
+      setPhotos((current) => [...current, blob].slice(0, 5));
+    } catch {
+      setStatus("The camera is not ready. Choose image files instead.");
+    }
+  }
+
+  function addPhotoFiles(event: ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(event.target.files ?? []).filter((file) =>
+      file.type.startsWith("image/"),
+    );
+    setPhotos((current) => [...current, ...selected].slice(0, 5));
+    setStatus(
+      selected.length > 0
+        ? "Photos selected. Add 3–5 different angles."
+        : "Choose JPEG, PNG, or WebP image files.",
+    );
+    event.target.value = "";
   }
 
   async function save() {
@@ -167,9 +190,20 @@ export default function CaregiverPage() {
             <h3>1. Photos <span className="urdu">تصاویر</span></h3>
             <div className="camera"><video ref={videoRef} playsInline muted /></div>
             <div className="row" style={{ marginTop: 12 }}>
-              <button className="soft" onClick={addPhoto}>Add photo ({photos.length}/5)</button>
+              <button className="soft" onClick={addPhoto} disabled={!cameraReady}>
+                Take camera photo ({photos.length}/5)
+              </button>
               <button onClick={() => setPhotos([])}>Clear</button>
             </div>
+            <label style={{ marginTop: 12 }}>
+              Or choose image files from this computer
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                onChange={addPhotoFiles}
+              />
+            </label>
             <div className="thumbs">
               {photos.map((photo, index) => (
                 <PhotoThumbnail photo={photo} index={index} key={index} />
