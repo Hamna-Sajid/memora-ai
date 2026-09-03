@@ -1,25 +1,120 @@
-import { supabase } from './client';
+import { EMBEDDING_SIZE } from "@/lib/ai/types";
+import type {
+  ItemLanguage,
+  ItemType,
+  MatchItem,
+  MatchResult,
+  RecallItem,
+} from "@/lib/ai/types";
+import { supabase } from "@/lib/supabase/client";
 
-// Upload a photo or audio blob, return its public link.
-export async function uploadFile(bucket: 'photos' | 'audio', file: Blob, name: string) {
-  const { error } = await supabase.storage.from(bucket).upload(name, file, { upsert: true });
-  if (error) throw error;
-  return supabase.storage.from(bucket).getPublicUrl(name).data.publicUrl;
-}
+type StorageBucket = "photos" | "audio";
 
-// Save one enrolled item + one embeddings row per photo. (Called by caregiver screen.)
-export async function saveItem(input: {
+type SaveItemInput = {
   label: string;
-  type: string;
+  type: ItemType;
   note_raw: string;
   note_text: string;
   audio_url: string;
-  language: string;
-  vectors: number[][];    // one 512-array per photo
-  photo_urls: string[];   // uploaded photo links
-}) {
+  language: ItemLanguage;
+  vectors: readonly (readonly number[])[];
+  photo_urls: readonly string[];
+};
+
+type DatabaseMatchRow = {
+  id?: unknown;
+  label?: unknown;
+  note_text?: unknown;
+  audio_url?: unknown;
+  type?: unknown;
+  language?: unknown;
+  score?: unknown;
+};
+
+function isEmbedding(vector: readonly number[]) {
+  return (
+    vector.length === EMBEDDING_SIZE &&
+    vector.every((value) => Number.isFinite(value))
+  );
+}
+
+function requireEmbedding(vector: readonly number[]) {
+  if (!isEmbedding(vector)) {
+    throw new TypeError(
+      `Expected ${EMBEDDING_SIZE} finite embedding values.`,
+    );
+  }
+}
+
+function requireNonEmptyText(value: unknown, field: string): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new TypeError(`Database match has an invalid ${field}.`);
+  }
+  return value;
+}
+
+function mapMatchRow(row: DatabaseMatchRow): MatchResult {
+  const type = row.type;
+  if (type !== "object" && type !== "face" && type !== "med") {
+    throw new TypeError("Database match has an invalid type.");
+  }
+
+  const language = row.language;
+  if (language !== "en" && language !== "ur") {
+    throw new TypeError("Database match has an invalid language.");
+  }
+
+  const score = row.score;
+  if (
+    typeof score !== "number" ||
+    !Number.isFinite(score) ||
+    score < 0 ||
+    score > 1
+  ) {
+    throw new TypeError("Database match has an invalid similarity score.");
+  }
+
+  const item: RecallItem = {
+    id: requireNonEmptyText(row.id, "id"),
+    label: requireNonEmptyText(row.label, "label"),
+    noteText: requireNonEmptyText(row.note_text, "note_text"),
+    audioUrl: requireNonEmptyText(row.audio_url, "audio_url"),
+    type,
+    language,
+  };
+
+  return { item, score };
+}
+
+export async function uploadFile(
+  bucket: StorageBucket,
+  file: Blob,
+  name: string,
+) {
+  if (file.size === 0) {
+    throw new TypeError("Cannot upload an empty file.");
+  }
+  if (!name.trim()) {
+    throw new TypeError("Upload name cannot be empty.");
+  }
+
+  const storage = supabase.storage.from(bucket);
+  const { error } = await storage.upload(name, file, { upsert: false });
+  if (error) throw error;
+  return storage.getPublicUrl(name).data.publicUrl;
+}
+
+export async function saveItem(input: SaveItemInput) {
+  if (input.vectors.length === 0) {
+    throw new TypeError("At least one enrollment embedding is required.");
+  }
+  if (input.vectors.length !== input.photo_urls.length) {
+    throw new TypeError("Every enrollment embedding requires one photo URL.");
+  }
+  input.vectors.forEach(requireEmbedding);
+
   const { data: item, error } = await supabase
-    .from('items')
+    .from("items")
     .insert({
       label: input.label,
       type: input.type,
@@ -32,28 +127,37 @@ export async function saveItem(input: {
     .single();
   if (error) throw error;
 
-  const rows = input.vectors.map((v, i) => ({
+  const rows = input.vectors.map((embedding, index) => ({
     item_id: item.id,
-    embedding: v,
-    photo_url: input.photo_urls[i] ?? null,
+    embedding: Array.from(embedding),
+    photo_url: input.photo_urls[index],
   }));
-  const { error: e2 } = await supabase.from('embeddings').insert(rows);
-  if (e2) throw e2;
+  const { error: embeddingsError } = await supabase
+    .from("embeddings")
+    .insert(rows);
+  if (embeddingsError) throw embeddingsError;
 
   return item.id as string;
 }
 
-// Find the nearest saved item to a query photo's numbers. (Called by recall logic.)
-export async function matchItem(vector: number[]) {
-  const { data, error } = await supabase.rpc('match_item', { query_embedding: vector });
+export const matchItem: MatchItem = async (embedding) => {
+  requireEmbedding(embedding);
+
+  const { data, error } = await supabase.rpc("match_item", {
+    query_embedding: Array.from(embedding),
+  });
   if (error) throw error;
-  const best = data?.[0];
-  return best ? { item: best, score: best.score as number } : null;
-}
+
+  if (!Array.isArray(data) || data.length === 0) {
+    return null;
+  }
+
+  return mapMatchRow(data[0] as DatabaseMatchRow);
+};
 
 export async function saveConsent(caregiverName: string) {
   const { error } = await supabase
-    .from('consent')
+    .from("consent")
     .insert({ caregiver_name: caregiverName, voice_consent: true });
   if (error) throw error;
 }

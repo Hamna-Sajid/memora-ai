@@ -27,6 +27,7 @@ The implementation must support the PRD's primary demo path: enroll an object wi
 - WP-3 passed on 2 September 2026 with an injected matcher, provisional threshold, fail-closed results, and boundary/error coverage.
 - WP-4 completed on 2 September 2026. The safe route passes automated coverage and the local Ollama adapter described all six supplied images through `qwen3-vl:2b-instruct` on the RX 580. Alibaba remains an optional deployment provider and currently lacks Singapore Qwen-VL entitlement.
 - WP-5 passed on 3 September 2026 using the internal `/ai-test` surface and an Infinix Hot 30 running Chrome. Warm phone inference is approximately 5.6 seconds; the page remained responsive and samples stayed at 17 ms or lower, so no Web Worker is currently justified. The speed remains a WP-8 optimization risk against the preferred 2-3 second target.
+- WP-6 code integration completed on 3 September 2026 after Member B's `cb1127d` landed on `main`. The production adapter maps and validates the RPC result and is connected through `recallFromDatabase()` with mocked contract coverage. Live verification remains gated by Supabase credentials, deployed schema, and storage buckets.
 
 ### External gates
 

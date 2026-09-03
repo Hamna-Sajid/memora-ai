@@ -31,4 +31,10 @@
 
    Run `npm run models:prepare` before building, then build and run the app and open `http://localhost:3000/ai-test`. The preparation command copies the cached Q8/WASM CLIP files into ignored same-origin assets, avoiding a runtime dependency on direct Hugging Face access. The internal page measures CLIP model warm-up, first and repeated image embeddings, a lightweight UI-delay signal, vector dimensions, and normalization. On a phone, the file input requests the rear camera when the browser supports `capture="environment"`.
 
-   The current desktop baseline and the real-phone recording checklist are in `docs/browser-performance-test.md`. WP-5 remains open until the intended demo phone is measured.
+   The desktop baseline, phone procedure, and successful Infinix Hot 30 results are recorded in `docs/browser-performance-test.md`. WP-5 is complete; warm phone inference is about 5.6 seconds and remains responsive, with speed tracked as a WP-8 optimization risk.
+
+   ## Supabase matcher integration
+
+   `lib/supabase/queries.ts` exports a typed `matchItem()` adapter for `recall()`. It validates a 512-value finite embedding, calls Member B's `match_item` RPC, maps snake-case database fields into the `RecallItem` contract, and rejects malformed rows so recall fails closed. Patient UI should call `recallFromDatabase()` from `lib/ai/database-recall.ts`; the lower-level injected `recall()` remains available for isolated tests.
+
+   Live verification requires `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`, the applied `supabase/schema.sql`, and existing public `photos` and `audio` buckets. The current schema/storage policies are suitable only for the team demo and require an authentication/RLS review before production use.

@@ -4,9 +4,10 @@ import type {
   EmbeddingErrorCode,
   EmbeddingImageInput,
 } from "@/lib/ai/types";
+import { EMBEDDING_SIZE } from "@/lib/ai/types";
 
 export const CLIP_MODEL_ID = "Xenova/clip-vit-base-patch32";
-export const EMBEDDING_SIZE = 512;
+export { EMBEDDING_SIZE } from "@/lib/ai/types";
 
 type PipelineImageInput = Blob | string;
 

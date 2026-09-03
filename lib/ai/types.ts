@@ -1,5 +1,7 @@
 export type EmbeddingImageInput = Blob | string | HTMLImageElement;
 
+export const EMBEDDING_SIZE = 512;
+
 export type EmbeddingErrorCode =
   | "BROWSER_ONLY"
   | "INVALID_INPUT"
