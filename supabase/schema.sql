@@ -21,8 +21,11 @@
      photo_url text
    );
 
-   -- 4. speeds up matching
-   create index on embeddings using ivfflat (embedding vector_cosine_ops) with (lists = 100);
+   -- 4. Keep exact search for the small demo dataset. An IVFFlat index built
+   -- with little data can return no candidate from an unpopulated list. Add an
+   -- approximate index only after the table has enough rows and it is tuned
+   -- against measured recall.
+   drop index if exists embeddings_embedding_idx;
 
    -- 5. caregiver consent record
    create table consent (
