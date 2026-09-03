@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import type { ChangeEvent } from "react";
 
 import { recallFromDatabase } from "@/lib/ai/database-recall";
 import { warmEmbeddingModel } from "@/lib/ai/embeddings";
@@ -45,25 +46,39 @@ export default function PatientPage() {
   const [notSure, setNotSure] = useState(false);
   const [description, setDescription] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
 
   useEffect(() => {
     let active = true;
     let stream: MediaStream | null = null;
 
     void (async () => {
-      try {
-        if (!videoRef.current) return;
-        stream = await startCamera(videoRef.current);
-      } catch {
-        if (active) setStatus("Camera blocked — allow camera access and reload.");
+      const cameraPromise = videoRef.current
+        ? startCamera(videoRef.current)
+        : Promise.reject(new Error("Camera element unavailable."));
+      const [modelResult, cameraResult] = await Promise.allSettled([
+        warmEmbeddingModel(),
+        cameraPromise,
+      ]);
+
+      if (!active) {
+        if (cameraResult.status === "fulfilled") {
+          cameraResult.value.getTracks().forEach((track) => track.stop());
+        }
         return;
       }
 
-      try {
-        await warmEmbeddingModel();
-        if (active) setStatus("Ready. Point the camera and tap once.");
-      } catch {
-        if (active) setStatus("Recognition model unavailable — reload to retry.");
+      if (cameraResult.status === "fulfilled") {
+        stream = cameraResult.value;
+        setCameraReady(true);
+      }
+
+      if (modelResult.status === "rejected") {
+        setStatus("Recognition model unavailable — reload to retry.");
+      } else if (cameraResult.status === "fulfilled") {
+        setStatus("Ready. Point the camera and tap once.");
+      } else {
+        setStatus("Ready. Choose a query image from this computer.");
       }
     })();
 
@@ -73,9 +88,7 @@ export default function PatientPage() {
     };
   }, []);
 
-  async function onTap() {
-    if (busy || !videoRef.current) return;
-
+  async function recognisePhoto(photo: Blob) {
     setBusy(true);
     setResult(null);
     setNotSure(false);
@@ -83,7 +96,6 @@ export default function PatientPage() {
     setStatus("Looking…");
 
     try {
-      const photo = await capturePhoto(videoRef.current);
       const recalled = await recallFromDatabase(photo);
 
       if (recalled.notSure) {
@@ -106,6 +118,27 @@ export default function PatientPage() {
     }
   }
 
+  async function onTap() {
+    if (busy || !cameraReady || !videoRef.current) return;
+    try {
+      await recognisePhoto(await capturePhoto(videoRef.current));
+    } catch {
+      setNotSure(true);
+      setStatus("The camera is not ready. Choose an image file instead.");
+    }
+  }
+
+  async function chooseQueryImage(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || busy) return;
+    if (!file.type.startsWith("image/")) {
+      setStatus("Choose a JPEG, PNG, or WebP image.");
+      return;
+    }
+    await recognisePhoto(file);
+  }
+
   return (
     <main className="app">
       <div className="phone">
@@ -118,10 +151,20 @@ export default function PatientPage() {
 
         <p className="status" aria-live="polite">{status}</p>
 
-        <button className="primary big-question" onClick={onTap} disabled={busy}>
-          <span>{busy ? "Please wait…" : "What is this?"}</span>
+        <button className="primary big-question" onClick={onTap} disabled={busy || !cameraReady}>
+          <span>{busy ? "Please wait…" : cameraReady ? "What is this?" : "Camera unavailable"}</span>
           <span className="urdu">یہ کیا ہے؟</span>
         </button>
+
+        <label>
+          Or choose a query image
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={chooseQueryImage}
+            disabled={busy}
+          />
+        </label>
 
         <div className="result" aria-live="polite">
           {!result && !notSure && (
