@@ -76,6 +76,28 @@ describe("recall", () => {
     });
   });
 
+  it("applies a calibrated threshold for Snakers", async () => {
+    const snakers = { ...item, label: "Snakers", type: "object" as const };
+    const { embed, matchItem } = dependencies(match(0.765, snakers));
+
+    await expect(recall(photo, matchItem, { embed })).resolves.toEqual({
+      notSure: true,
+      score: 0.765,
+      reason: "below-threshold",
+    });
+  });
+
+  it("accepts Snakers at its calibrated threshold", async () => {
+    const snakers = { ...item, label: " snAKers ", type: "object" as const };
+    const { embed, matchItem } = dependencies(match(0.77, snakers));
+
+    await expect(recall(photo, matchItem, { embed })).resolves.toEqual({
+      notSure: false,
+      item: snakers,
+      score: 0.77,
+    });
+  });
+
   it("returns not sure when the matcher finds nothing", async () => {
     const { embed, matchItem } = dependencies(null);
 

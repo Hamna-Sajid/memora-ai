@@ -8,10 +8,14 @@ import type {
   RecallItem,
   RecallResult,
 } from "@/lib/ai/types";
+import {
+  confidenceThresholdForLabel,
+  DEFAULT_CONFIDENCE_THRESHOLD,
+} from "@/lib/ai/thresholds";
 
 // Working cutoff from the first exact-search calibration batch. Keep provisional
 // until several enrolled objects and visually similar unknowns are measured.
-export const PROVISIONAL_CONFIDENCE_THRESHOLD = 0.7;
+export const PROVISIONAL_CONFIDENCE_THRESHOLD = DEFAULT_CONFIDENCE_THRESHOLD;
 
 type EmbedImage = (image: EmbeddingImageInput) => Promise<number[]>;
 
@@ -65,9 +69,10 @@ export async function recall(
   matchItem: MatchItem,
   options: RecallOptions = {},
 ): Promise<RecallResult> {
-  const threshold = options.threshold ?? PROVISIONAL_CONFIDENCE_THRESHOLD;
   const embed = options.embed ?? embedImage;
-  validateThreshold(threshold);
+  if (options.threshold !== undefined) {
+    validateThreshold(options.threshold);
+  }
 
   let embedding: number[];
   try {
@@ -114,6 +119,9 @@ export async function recall(
       reason: "invalid-match",
     };
   }
+
+  const threshold =
+    options.threshold ?? confidenceThresholdForLabel(match.item.label);
 
   if (match.score < threshold) {
     return {

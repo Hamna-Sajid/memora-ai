@@ -5,6 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 
 import { recallFromDatabase } from "@/lib/ai/database-recall";
+import {
+  isConfirmedBy,
+  requiresConfirmation,
+} from "@/lib/ai/confirmation";
 import { warmEmbeddingModel } from "@/lib/ai/embeddings";
 import type { RecallItem } from "@/lib/ai/types";
 import { capturePhoto, startCamera } from "@/lib/camera";
@@ -92,7 +96,10 @@ export default function PatientPage() {
     };
   }, []);
 
-  async function recognisePhoto(photo: Blob) {
+  async function recognisePhoto(
+    photo: Blob,
+    captureConfirmation?: () => Promise<Blob>,
+  ) {
     setBusy(true);
     setResult(null);
     setNotSure(false);
@@ -107,6 +114,28 @@ export default function PatientPage() {
         setStatus("Checking the photo…");
         setDescription(await describeUnknownPhoto(photo));
         setStatus("I’m not sure. You can ask your caregiver.");
+      } else if (requiresConfirmation(recalled)) {
+        if (!captureConfirmation) {
+          setNotSure(true);
+          setStatus("This result needs a second camera check. Please try again.");
+          return;
+        }
+
+        setStatus("Hold steady — checking once more…");
+        const confirmationPhoto = await captureConfirmation();
+        const confirmation = await recallFromDatabase(confirmationPhoto);
+
+        if (!isConfirmedBy(recalled, confirmation)) {
+          setNotSure(true);
+          setStatus("I’m not sure. You can ask your caregiver.");
+          return;
+        }
+
+        setResult(recalled.item);
+        setStatus("Recognised after a second check.");
+        if (recalled.item.audioUrl) {
+          await new Audio(recalled.item.audioUrl).play().catch(() => undefined);
+        }
       } else {
         setResult(recalled.item);
         setStatus("Recognised.");
@@ -125,7 +154,15 @@ export default function PatientPage() {
   async function onTap() {
     if (busy || !cameraReady || !videoRef.current) return;
     try {
-      await recognisePhoto(await capturePhoto(videoRef.current));
+      await recognisePhoto(
+        await capturePhoto(videoRef.current),
+        async () => {
+          if (!videoRef.current) {
+            throw new Error("Camera element unavailable.");
+          }
+          return capturePhoto(videoRef.current);
+        },
+      );
     } catch {
       setNotSure(true);
       setStatus("The camera is not ready. Choose an image file instead.");

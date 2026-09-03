@@ -17,7 +17,7 @@
 
    The model is loaded once per browser session. A failed initial download clears the cached promise so a later warm-up can retry.
 
-   `lib/ai/recall.ts` exports `recall(photo, matchItem, options?)`. The current working confidence threshold is `0.70`, selected from the first exact-search calibration batch; it remains provisional until multiple enrolled objects and visually similar unknowns are measured. The matcher is injected so isolated tests can use a fake implementation.
+   `lib/ai/recall.ts` exports `recall(photo, matchItem, options?)`. The default working confidence threshold is `0.70`, selected from the first exact-search calibration batch. Calibrated item overrides are isolated in `lib/ai/thresholds.ts`; `Snakers` currently uses `0.77` and live camera scores below `0.80` require a confirming second frame. These values remain provisional. The matcher is injected so isolated tests can use a fake implementation.
 
    A confident result has `{ notSure: false, item, score }`. Every failure or low-confidence path returns `{ notSure: true, score, reason }` and never exposes an item. Member B's adapter must return cosine similarity in the range `0..1`, where higher is better, and map database fields to the camel-case `RecallItem` contract in `lib/ai/types.ts`.
 
@@ -29,7 +29,22 @@
 
    ## Browser performance test
 
-   Run `npm run models:prepare` before building, then build and run the app and open `http://localhost:3000/ai-test`. The preparation command copies the cached Q8/WASM CLIP files into ignored same-origin assets, avoiding a runtime dependency on direct Hugging Face access. The internal page measures CLIP model warm-up, first and repeated image embeddings, a lightweight UI-delay signal, vector dimensions, and normalization. On a phone, the file input requests the rear camera when the browser supports `capture="environment"`.
+   Run `npm run models:prepare` before building, then build and run the app and open `http://localhost:3000/ai-test`. On its first run, the preparation command downloads the Q8/WASM CLIP model and copies it into ignored same-origin assets, avoiding a browser runtime dependency on direct Hugging Face access. The internal page measures CLIP model warm-up, first and repeated image embeddings, a lightweight UI-delay signal, vector dimensions, and normalization. On a phone, the file input requests the rear camera when the browser supports `capture="environment"`.
+
+   ## Teammate local setup
+
+   After checking out `feat/ai`, run:
+
+   ```powershell
+   npm install
+   Copy-Item .env.example .env.local
+   npm run models:prepare
+   npm run dev
+   ```
+
+   Fill `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local` before using enrollment or recognition. Share those values privately; never add a Supabase service-role key to the browser app or Git. `NEXT_PUBLIC_CAREGIVER_PHONE` is needed for the call button.
+
+   The default Ollama description fallback additionally requires a local Ollama installation with `qwen3-vl:2b-instruct`; it is optional for stored-item recognition. A teammate using the same Supabase project will see the same enrolled items and does not need to recreate the schema or buckets. For phone testing, use `npm run dev:https` and follow `docs/mobile-https-test.md` on that computer.
 
    The desktop baseline, phone procedure, and successful Infinix Hot 30 results are recorded in `docs/browser-performance-test.md`. WP-5 is complete; warm phone inference is about 5.6 seconds and remains responsive, with speed tracked as a WP-8 optimization risk.
 

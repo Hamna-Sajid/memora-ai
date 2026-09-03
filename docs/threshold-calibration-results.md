@@ -18,3 +18,13 @@ Environment: local desktop calibration screen, Supabase exact cosine search, one
 Known minimum: `0.7450`. Unknown maximum: `0.6309`. Observed gap: `0.1141`. The `0.70` working cutoff leaves `0.0450` below the weakest known result and `0.0691` above the strongest unknown result.
 
 This is not a final threshold. Repeat with several enrolled objects, visually similar unknowns, different lighting, and the intended phone before closing WP-7.
+
+## Snakers hard-negative batch — 4 September 2026
+
+Eight held-out Snakers photos scored from `0.7782` to `0.8998`. Eight unknown photos, including visually similar chip packets, had a highest Snakers score of `0.7636`.
+
+Known minimum: `0.7782`. Unknown maximum: `0.7636`. Observed gap: `0.0146`. A provisional item-specific cutoff of `0.77` is used for `Snakers`; other items retain the `0.70` default.
+
+The margin is narrow, so this cutoff is appropriate for the current demo only. Recalibrate with additional products and live camera images before production use.
+
+Patient-mode camera results from `0.77` up to (but not including) `0.80` require a second live frame. The item is returned only when the second frame also passes its cutoff and identifies the same item. This confirmation band addresses observed borderline false positives that disappeared on an immediate retake.

@@ -10,6 +10,7 @@ import {
 } from "@/lib/ai/calibration";
 import { embedImage, warmEmbeddingModel } from "@/lib/ai/embeddings";
 import { PROVISIONAL_CONFIDENCE_THRESHOLD } from "@/lib/ai/recall";
+import { confidenceThresholdForLabel } from "@/lib/ai/thresholds";
 import { matchItem } from "@/lib/supabase/queries";
 
 type CalibrationRow = {
@@ -65,10 +66,13 @@ export default function CalibrationPage() {
     for (const file of files) {
       try {
         const embedding = await embedImage(file);
+        const match = await matchItem(embedding);
         const decision = analyzeCalibrationMatch(
           unknown ? null : expectedLabel,
-          await matchItem(embedding),
-          PROVISIONAL_CONFIDENCE_THRESHOLD,
+          match,
+          match
+            ? confidenceThresholdForLabel(match.item.label)
+            : PROVISIONAL_CONFIDENCE_THRESHOLD,
         );
         nextRows.push({
           filename: file.name,
@@ -104,7 +108,7 @@ export default function CalibrationPage() {
         <section className="card">
           <h2>Recognition score calibration</h2>
           <p className="muted">
-            Internal test screen. Use held-out photos that were not enrolled. The current provisional threshold is {PROVISIONAL_CONFIDENCE_THRESHOLD.toFixed(2)}.
+            Internal test screen. Use held-out photos that were not enrolled. The default provisional threshold is {PROVISIONAL_CONFIDENCE_THRESHOLD.toFixed(2)}; calibrated item overrides are applied automatically.
           </p>
           <div className="fields">
             <label>

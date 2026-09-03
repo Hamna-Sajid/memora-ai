@@ -28,12 +28,36 @@ async function requireFile(relativePath) {
 
   if (!details?.isFile() || details.size === 0) {
     throw new Error(
-      `Missing cached model file: ${relativePath}. Run the recognition spike once while online, then retry.`,
+      `Missing cached model file after download: ${relativePath}.`,
     );
   }
 
   return source;
 }
+
+async function hasFile(relativePath) {
+  const details = await stat(path.join(packageCache, relativePath)).catch(
+    () => null,
+  );
+  return Boolean(details?.isFile() && details.size > 0);
+}
+
+async function ensureModelCache() {
+  const availability = await Promise.all(requiredFiles.map(hasFile));
+  if (availability.every(Boolean)) return;
+
+  console.log(`Downloading ${modelId} for the first local run...`);
+  const { env, pipeline } = await import("@huggingface/transformers");
+  env.allowLocalModels = false;
+
+  const extractor = await pipeline("image-feature-extraction", modelId, {
+    device: "wasm",
+    dtype: "q8",
+  });
+  await extractor.dispose();
+}
+
+await ensureModelCache();
 
 for (const relativePath of requiredFiles) {
   const source = await requireFile(relativePath);
