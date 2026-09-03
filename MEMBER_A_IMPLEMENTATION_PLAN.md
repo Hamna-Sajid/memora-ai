@@ -30,7 +30,7 @@ The implementation must support the PRD's primary demo path: enroll an object wi
 - WP-6 code integration completed on 3 September 2026 after Member B's `cb1127d` landed on `main`. The production adapter maps and validates the RPC result and is connected through `recallFromDatabase()` with mocked contract coverage. Live verification remains gated by Supabase credentials, deployed schema, and storage buckets.
 - WP-8 code integration completed on 3 September 2026 from Member C's `fd12e68`. The caregiver and patient screens retain the tested local embedding/recall implementations, pre-warm the model, prevent repeated recall taps, play audio only for confident results, and fail safely to the caregiver/Qwen path. Its real-device exit gate remains blocked by WP-7 calibration and live Supabase configuration.
 - The first live end-to-end rehearsal passed on 3 September 2026: `Suduri` was enrolled with five photos and public caregiver audio, a held-out view recalled it successfully, and one unrelated photo produced the safe not-sure response. This is integration evidence only, not enough data to finalize the WP-7 threshold.
-- Initial WP-7 batch: returned known scores were 0.6346, 0.6405, and 0.7079; the strongest returned unknown score was 0.5643. Two known/unknown queries returned no row because the schema had built a 100-list IVFFlat index with only five vectors. The repository now specifies exact search for the demo. After the live index is dropped and the same batch is repeated, `0.60` is the first candidate cutoff, not yet the final calibrated threshold.
+- Initial WP-7 batch exposed a 100-list IVFFlat index built with only five vectors, causing intermittent empty matches. After removing that index, all eight queries returned a nearest row: known scores were 0.7450–0.7809 and unknown scores were 0.5635–0.6309. The working threshold is now `0.70`; it accepts all four measured known views and rejects all four measured unknowns, but remains provisional until multiple enrolled objects are tested.
 
 ### External gates
 
@@ -39,7 +39,7 @@ The implementation must support the PRD's primary demo path: enroll an object wi
 | Rotate the exposed Alibaba key | Any Qwen API verification | Member A: revoke the pasted key and create a fresh key | Build and test all local recognition work |
 | Five spike photos | Day-0 recognition proof | Complete: six local photos supplied and exercised | Repeat later with more objects for threshold calibration |
 | `matchItem()` and `match_item` | Real database recall | Member B | Use an injected fake matcher and contract tests |
-| Enrolled seed dataset | Final confidence threshold | Members B/C | Keep `0.80` clearly marked as provisional |
+| Enrolled seed dataset | Final confidence threshold | Members B/C | Keep the working `0.70` clearly marked as provisional |
 | Caregiver and patient screens | Model pre-warm and end-to-end UI | Member C | Expose stable `warmEmbeddingModel()` and `recall()` APIs |
 
 These gates do not prevent implementation from starting. They prevent final integration, threshold tuning, and the complete Definition of Done.

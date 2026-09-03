@@ -54,11 +54,12 @@ describe("recall", () => {
   });
 
   it("returns not sure below the threshold without exposing the item", async () => {
-    const { embed, matchItem } = dependencies(match(0.79));
+    const belowThreshold = PROVISIONAL_CONFIDENCE_THRESHOLD - 0.01;
+    const { embed, matchItem } = dependencies(match(belowThreshold));
 
     await expect(recall(photo, matchItem, { embed })).resolves.toEqual({
       notSure: true,
-      score: 0.79,
+      score: belowThreshold,
       reason: "below-threshold",
     });
   });

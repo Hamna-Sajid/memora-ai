@@ -17,7 +17,7 @@
 
    The model is loaded once per browser session. A failed initial download clears the cached promise so a later warm-up can retry.
 
-   `lib/ai/recall.ts` exports `recall(photo, matchItem, options?)`. Until seed-data calibration is complete it uses a provisional confidence threshold of `0.80`. The matcher is injected, allowing unit tests and current UI work to use a fake implementation before Member B's Supabase query lands.
+   `lib/ai/recall.ts` exports `recall(photo, matchItem, options?)`. The current working confidence threshold is `0.70`, selected from the first exact-search calibration batch; it remains provisional until multiple enrolled objects and visually similar unknowns are measured. The matcher is injected so isolated tests can use a fake implementation.
 
    A confident result has `{ notSure: false, item, score }`. Every failure or low-confidence path returns `{ notSure: true, score, reason }` and never exposes an item. Member B's adapter must return cosine similarity in the range `0..1`, where higher is better, and map database fields to the camel-case `RecallItem` contract in `lib/ai/types.ts`.
 

@@ -9,7 +9,9 @@ import type {
   RecallResult,
 } from "@/lib/ai/types";
 
-export const PROVISIONAL_CONFIDENCE_THRESHOLD = 0.8;
+// Working cutoff from the first exact-search calibration batch. Keep provisional
+// until several enrolled objects and visually similar unknowns are measured.
+export const PROVISIONAL_CONFIDENCE_THRESHOLD = 0.7;
 
 type EmbedImage = (image: EmbeddingImageInput) => Promise<number[]>;
 
